@@ -300,7 +300,6 @@
             this.Name = "Form1";
             this.ShowInTaskbar = false;
             this.Text = "Simple Calculator";
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Click += new System.EventHandler(this.clear_click);
             this.ResumeLayout(false);
