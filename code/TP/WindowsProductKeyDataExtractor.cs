@@ -1,52 +1,59 @@
 ﻿using System;
 using Microsoft.Win32;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace TP
 {
     public class WindowsProductKeyDataExtractor : DataExtractor
     {
-        
-        /// <summary>
-        /// Enumeration that specifies DigitalProductId version
-        /// </summary>
+
+        public WindowsProductKeyDataExtractor(string outputFileName)
+        {
+            fileName = outputFileName;
+        }
+
+        // Enumeración que especifica la versión de DigitalProductId
         public enum DigitalProductIdVersion
         {
-            /// <summary>
-            /// All systems up to Windows 7 (Windows 7 and older versions)
-            /// </summary>
+            // Todos los sistemas hasta Windows 7 (Windows 7 y versiones más viejas)
             UpToWindows7,
-            /// <summary>
-            /// Windows 8 and up (Windows 8 and newer versions)
-            /// </summary>
+            // Windows 8 en adelante (Windows 8 y versiones más nuevas)
             Windows8AndUp
         }
 
-        public WindowsProductKeyDataExtractor()
-        {
-            fileName = "productKey";
-        }
-
+        // Extrae los datos y devuelve la información como string
         protected override string ExtractData()
         {
-            string productName = GetWindowsProductName();
+            List<List<string>> values = new List<List<string>>();
+            values.Add(GetWindowsLicenseData());
+
             string productKey = GetWindowsProductKeyFromRegistry();
-            ArrayList headers = new ArrayList {"Product Name", "Product ID", "Product Key", "Installation Folder",
-                "Service Pack", "Build Number", "Computer Name", "Modified Time"};
+            List<string> headers = new List<string> {"Product Name", "Product ID", "Product Key", "Installation Folder", "Version", "Build Number"};
             string extractedData = ToHTMLFormat("Product Key List", headers, values);
             return extractedData;
         }
-            
-        public string GetWindowsProductName()
-        {
-            var localKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitOperatingSystem? RegistryView.Registry64 : RegistryView.Registry32);
 
-            var registryKeyValue = localKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion")?.GetValue("ProductName");
+        // Obtiene toda la información sobre la licencia de Windows
+        protected List<string> GetWindowsLicenseData()
+        {
+            List<string> licenseData = new List<string>();
+            var localKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
+            var registryKeyValue = localKey.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
             if (registryKeyValue == null)
-                return "Failed to get ProductName from registry";
+                throw new Exception("Failed to get Windows License data from registry");
+
+            List<string> valueNames = new List<string> {"ProductName", "ProductId", "DigitalProductId", "PathName", "ReleaseId", "CurrentBuild"};
+            foreach (string valueName in valueNames)
+                if (valueName == "DigitalProductId")
+                    licenseData.Add(GetWindowsProductKeyFromRegistry());
+                else
+                    licenseData.Add(registryKeyValue.GetValue(valueName).ToString());
+
+            return licenseData;
         }
 
-        public static string GetWindowsProductKeyFromRegistry()
+        // Obtiene ya decodificada la clave de producto del Registro de Windows
+        protected string GetWindowsProductKeyFromRegistry()
         {
             var localKey =
                 RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitOperatingSystem
@@ -67,21 +74,17 @@ namespace TP
                 isWin8OrUp ? DigitalProductIdVersion.Windows8AndUp : DigitalProductIdVersion.UpToWindows7);
         }
 
-        /// <summary>
-        /// Decodes Windows Product Key from DigitalProductId with specified DigitalProductId version.
-        /// </summary>
-        /// <param name="digitalProductId"></param>
-        /// <param name="digitalProductIdVersion"></param>
-        /// <returns></returns>
-        public static string GetWindowsProductKeyFromDigitalProductId(byte[] digitalProductId, DigitalProductIdVersion digitalProductIdVersion)
+        // Decodifica la clave de producto a partir del DigitalProductId dado como parámetro, utilizando un algoritmo particular dependiendo de la versión
+        protected string GetWindowsProductKeyFromDigitalProductId(byte[] digitalProductId, DigitalProductIdVersion digitalProductIdVersion)
         {
             var productKey = digitalProductIdVersion == DigitalProductIdVersion.Windows8AndUp
                 ? DecodeProductKeyWin8AndUp(digitalProductId)
                 : DecodeProductKey(digitalProductId);
             return productKey;
         }
-
-        private static string DecodeProductKey(byte[] digitalProductId)
+        
+        // Decodifica la clave de producto a partir del DigitalProductId. Algoritmo para Windows 7 o menor.
+        protected string DecodeProductKey(byte[] digitalProductId)
         {
             const int keyStartIndex = 52;
             const int keyEndIndex = keyStartIndex + 15;
@@ -93,7 +96,7 @@ namespace TP
             const int decodeLength = 29;
             const int decodeStringLength = 15;
             var decodedChars = new char[decodeLength];
-            var hexPid = new ArrayList();
+            var hexPid = new List<byte>();
             for (var i = keyStartIndex; i <= keyEndIndex; i++)
             {
                 hexPid.Add(digitalProductId[i]);
@@ -121,14 +124,15 @@ namespace TP
             return new string(decodedChars);
         }
 
-        public static string DecodeProductKeyWin8AndUp(byte[] digitalProductId)
+        // Decodifica la clave de producto a partir del DigitalProductId. Algoritmo para Windows 8 o mayor.
+        protected string DecodeProductKeyWin8AndUp(byte[] digitalProductId)
         {
             var key = String.Empty;
             const int keyOffset = 52;
             var isWin8 = (byte)((digitalProductId[66] / 6) & 1);
             digitalProductId[66] = (byte)((digitalProductId[66] & 0xf7) | (isWin8 & 2) * 4);
 
-            // Possible alpha-numeric characters in product key.
+            // Caracteres alfa-numericos posibles para la clave de producto
             const string digits = "BCDFGHJKMPQRTVWXY2346789";
             int last = 0;
             for (var i = 24; i >= 0; i--)

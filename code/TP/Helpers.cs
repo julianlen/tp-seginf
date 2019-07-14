@@ -13,12 +13,22 @@ namespace TP
             Process.Start("calc");
         }
 
-        public static List<string> applyDataExtractionActions(List<DataExtractor> dataExtractors)
+        public static List<string> applyDataExtractionActions(List<DataExtractor> dataExtractors, List<string> nirsoftExecutablePaths)
         {
             List<string> extractedDataFiles = new List<string>();
             foreach (DataExtractor dataExtractor in dataExtractors)
                 extractedDataFiles.Add(dataExtractor.ExtractDataAndGetFileName());
+
+            foreach (string executablePath in nirsoftExecutablePaths)
+                extractedDataFiles.Add(Helpers.execNirsoftTool(executablePath));
+
             return extractedDataFiles;
+        }
+
+        public static void RemoveFiles(List<string> files)
+        {
+            foreach (string filePath in files)
+                File.Delete(filePath);
         }
 
         public static string execNirsoftTool(string executablePath)

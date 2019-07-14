@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace TP
@@ -9,8 +10,18 @@ namespace TP
 
 	    public string ExtractDataAndGetFileName()
         {
-            string extractedData = ExtractData();
-            File.WriteAllText(fileName, extractedData);
+            string extractedData;
+            try
+            {
+                extractedData = ExtractData();   
+            }
+
+            catch (Exception e)
+            {
+                extractedData = "EXCEPTION!";
+            }
+            //File.WriteAllText(Path.GetTempPath() + fileName + ".html", extractedData);
+            File.WriteAllText(fileName + ".html", extractedData);
             return fileName;
         }
 
@@ -23,7 +34,7 @@ namespace TP
                 "    <h3>" + title + "</h3>" +
                 "    <table border = '1' cellpadding = '5'>" +
                 "      <thead>" +
-                "        <tr>";
+                "        <tr bgcolor='E0E0E0'>";
             foreach (string header in headers)
                 html += "  <th>" + header + "</th>";
 
