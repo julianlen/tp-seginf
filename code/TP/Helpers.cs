@@ -55,7 +55,7 @@ namespace TP
 
             foreach (var file in files)
             {
-                var attachment = new System.Net.Mail.Attachment(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, file));
+                var attachment = new Attachment(file);
                 mail.Attachments.Add(attachment);
             }
 
@@ -64,6 +64,7 @@ namespace TP
             SmtpServer.EnableSsl = true;
 
             SmtpServer.Send(mail);
+            mail.Attachments.Dispose();
         }
 
     }
