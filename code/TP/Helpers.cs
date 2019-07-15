@@ -16,7 +16,7 @@ namespace TP
                 extractedDataFiles.Add(dataExtractor.ExtractDataAndGetFileName());
 
             foreach (string resource in nirsoftExecutablePaths)
-                extractedDataFiles.Add(Helpers.ExecNirsoftTool(resource));
+                extractedDataFiles.Add(ExecNirsoftTool(resource));
 
             return extractedDataFiles;
         }
@@ -30,7 +30,7 @@ namespace TP
         public static string ExecNirsoftTool(string nirsoftTool)
         {
             string path = Path.Combine(Path.GetTempPath(), nirsoftTool + ".exe");
-            File.WriteAllBytes(path, (byte[]) TP.Properties.Resources.ResourceManager.GetObject(nirsoftTool));
+            File.WriteAllBytes(path, (byte[]) Properties.Resources.ResourceManager.GetObject(nirsoftTool));
 
             string file = path.Replace("exe", "html");
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -38,6 +38,8 @@ namespace TP
             startInfo.Arguments = @"/shtml " + file;
             var process = Process.Start(startInfo);
             process.WaitForExit();
+
+            File.Delete(path);
 
             return file;
         }

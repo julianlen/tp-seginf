@@ -18,11 +18,11 @@ namespace TP
 
             catch (Exception e)
             {
-                extractedData = "EXCEPTION!";
+                extractedData = "¡EXCEPTION! " + e.Message;
             }
-            //File.WriteAllText(Path.GetTempPath() + fileName + ".html", extractedData);
-            File.WriteAllText(fileName + ".html", extractedData);
-            return fileName;
+            string fullPath = Path.GetTempPath() + fileName + ".html";
+            File.WriteAllText(fullPath, extractedData);
+            return fullPath;
         }
 
         protected string ToHTMLFormat(string title, List<string> headers, List<List<string>> values)
